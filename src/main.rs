@@ -3,6 +3,37 @@ use gpui::{
     WindowBounds, WindowOptions,
 };
 
+use gpui::{ClickEvent, CursorStyle};
+
+/// Trait for adding click interactions to UI elements
+pub trait Clickable {
+    /// Sets the click event handler for the element
+    fn on_click(
+        self,
+        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    ) -> Self;
+
+    /// Sets the cursor style when hovering over the element
+    fn cursor_style(self, cursor_style: CursorStyle) -> Self;
+}
+
+// Example implementation for Div if you need to extend it
+impl Clickable for gpui::Div {
+    fn on_click(
+        mut self, 
+        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static
+    ) -> Self {
+        // This would be implemented in the gpui library's internals
+        // Typically, this would store the handler in the element's internal state
+        self
+    }
+
+    fn cursor_style(mut self, cursor_style: CursorStyle) -> Self {
+        // Similar internal implementation
+        self
+    }
+}
+
 struct GameEngine {
     title: SharedString,
     branch: SharedString,
