@@ -1,3 +1,5 @@
+use rfd::FileDialog;
+
 use gpui::{
     div, prelude::*, rgb, SharedString
 };
@@ -184,7 +186,12 @@ impl MainContent {
                                             .child("Open Folder")
                                             .on_mouse_down(gpui::MouseButton::Left, |_, _, _| {
                                                 println!("Open Folder clicked");
-                                            })
+                                                FileDialog::new()
+                                                    .set_directory("/")
+                                                    .pick_folder()
+                                                    .map(|path| println!("Selected folder: {:?}", path));
+                                                }
+                                            )
                                     )
                                     .child(
                                         div()

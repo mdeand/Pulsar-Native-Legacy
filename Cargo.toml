@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 gpui = { git = "https://github.com/tristanpoland/zed" }
+rfd = "0.15.2"
