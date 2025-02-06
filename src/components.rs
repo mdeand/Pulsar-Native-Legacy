@@ -182,6 +182,9 @@ impl MainContent {
                                             .text_color(rgb(0xFFFFFF))
                                             .rounded_sm()
                                             .child("Open Folder")
+                                            .on_mouse_down(gpui::MouseButton::Left, |_, _, _| {
+                                                println!("Open Folder clicked");
+                                            })
                                     )
                                     .child(
                                         div()
