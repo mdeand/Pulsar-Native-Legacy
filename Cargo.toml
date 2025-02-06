@@ -4,7 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-ui =       { git = "https://github.com/tristanpoland/zed" }
-gpui =     { git = "https://github.com/tristanpoland/zed" }
-theme =    { git = "https://github.com/tristanpoland/zed" }
-settings = { git = "https://github.com/tristanpoland/zed" }
+gpui = { git = "https://github.com/tristanpoland/zed" }

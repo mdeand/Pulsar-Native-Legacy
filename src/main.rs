@@ -1,6 +1,5 @@
 use gpui::{
-    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, SharedString, Window,
-    WindowBounds, WindowOptions,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, SharedString, TitlebarOptions, Window, WindowBounds, WindowOptions
 };
 
 use gpui::{ClickEvent, CursorStyle};
@@ -275,6 +274,10 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
+                titlebar: Some(TitlebarOptions {
+                    appears_transparent: true,
+                    ..Default::default()
+                }),
                 ..Default::default()
             },
             |_, cx| {
