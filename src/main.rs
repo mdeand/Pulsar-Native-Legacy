@@ -5,7 +5,7 @@ use gpui::{
 };
 
 mod components; // We'll create this module for UI components
-use components::{TopBar, MenuBar, TabBar, MainContent, StatusBar};
+use components::{top_bar, menu_bar, tab_bar, main_content, status_bar, Tab};
 
 struct GameEngine {
     title: SharedString,
@@ -22,16 +22,16 @@ impl Render for GameEngine {
             .flex_col()
             .size_full()
             .bg(rgb(0x000000)) // Pure black background
-            .child(TopBar::new(self.title.clone()))
-            .child(MenuBar::new())
-            .child(TabBar::new())
-            .child(MainContent::new())
-            .child(StatusBar::new(
+            .child(top_bar("PULSAR ENGINE".into()))
+            .child(menu_bar())
+            .child(tab_bar(0, &vec!["Tab 1", "Tab 2", "Tab 3"]))
+            .child(main_content(&Tab::LevelEditor))
+            .child(status_bar(
                 self.fps.clone(), 
                 self.memory.clone(), 
                 self.time.clone(), 
-                self.branch.clone()
-            ))
+                self.branch.clone())
+            )
     }
 }
 
