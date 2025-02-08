@@ -1,4 +1,4 @@
-use gpui::{div, hsla, rgb, IntoElement, ParentElement, Render, Styled, ViewContext, VisualContext, WindowContext};
+use gpui::{div, rgb, IntoElement, ParentElement, Render, Styled, ViewContext, VisualContext, WindowContext};
 
 
 pub struct App{}
