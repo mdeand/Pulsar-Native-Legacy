@@ -1,4 +1,3 @@
-use app::App;
 use gpui::{*, App as Application};
 
 mod app;

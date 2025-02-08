@@ -4,13 +4,13 @@ use gpui::{div, rgb, IntoElement, ParentElement, Render, Styled, ViewContext, Vi
 pub struct App{}
 
 impl App {
-    pub fn new(mut cx: &mut WindowContext) -> gpui::View<Self> {
+    pub fn new(cx: &mut WindowContext) -> gpui::View<Self> {
         cx.new_view(|_| App {})
     }
 }
 
 impl Render for App {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().text_color(rgb(0xFFFFFF)).child("testing")
     }
 }
