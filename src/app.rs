@@ -1,33 +1,20 @@
-use std::{cell::RefCell, rc::Rc};
+use gpui::{div, IntoElement, ParentElement, Render, ViewContext, VisualContext, WindowContext};
 
-use gpui::{div, rgb, InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, VisualContext, WindowContext};
+use crate::components::title_bar::TitleBar;
 
 
-pub struct App{
-    count: Rc<RefCell<i32>>,
-}
+pub struct App {}
 
 impl App {
     pub fn new(cx: &mut WindowContext) -> gpui::View<Self> {
-        cx.new_view(|_| App { count: Rc::new(RefCell::new(0)) })
+        cx.new_view(|_| Self {})
     }
 }
 
 impl Render for App {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let count = self.count.clone();
+    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().children(vec![
-            div()
-                .text_color(rgb(0xFFFFFF))
-                .child(self.count.borrow().to_string()),
-            div()
-                .text_color(rgb(0xFFFFFF))
-                .child("+")
-                .on_mouse_down(gpui::MouseButton::Left, move |_, cx| {
-                    *count.borrow_mut() += 1;
-                    println!("{}", count.borrow());
-                    cx.refresh();
-                }),
+            TitleBar::new(cx)
         ])
     }
 }
