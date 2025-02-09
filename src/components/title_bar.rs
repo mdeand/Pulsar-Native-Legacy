@@ -1,4 +1,4 @@
-use gpui::{div, rgb, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext};
+use gpui::{div, rgb, Font, FontWeight, IntoElement, ParentElement, Render, Styled, View, ViewContext, VisualContext};
 use std::{thread::sleep, time::Duration};
 
 use crate::app::App;
@@ -33,6 +33,7 @@ impl Render for TitleBar {
                         .text_color(rgb(0x2F80ED))
                         .text_sm()
                         .child("Pulsar Engine")
+                        .font_weight(FontWeight::BOLD)
                 )
         )
         .child(

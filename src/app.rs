@@ -1,6 +1,9 @@
 use gpui::{div, IntoElement, ParentElement, Render, ViewContext, VisualContext, WindowContext};
 
-use crate::components::title_bar::TitleBar;
+use crate::components::{
+    title_bar::TitleBar,
+    menu_bar::AppMenuBar
+};
 
 
 pub struct App {}
@@ -14,7 +17,8 @@ impl App {
 impl Render for App {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().children(vec![
-            TitleBar::new(cx)
+            TitleBar::new(cx).into_any_element(),
+            AppMenuBar::new(cx).into_any_element()
         ])
     }
 }

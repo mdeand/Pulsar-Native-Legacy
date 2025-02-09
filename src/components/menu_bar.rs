@@ -2,45 +2,55 @@ use gpui::{div, rgb, IntoElement, ParentElement, Render, Styled, ViewContext, Vi
 
 use crate::app::App;
 
-pub struct MenuBar {}
+pub struct AppMenuBar {}
 
-impl MenuBar {
+impl AppMenuBar {
     pub fn new(cx: &mut ViewContext<App>) -> gpui::View<Self> {
-        cx.new_view(|_| Self {  })
+        cx.new_view(|_| Self {})
     }
 }
 
-impl Render for MenuBar {
+impl Render for AppMenuBar {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div()
-        .size_full()
-        .flex()
-        .h_10()
-        .items_center()
-        .justify_between()
-        .px_4()
-        .bg(rgb(0x0A0A0A))
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .gap_2()
-                .text_color(rgb(0x2F80ED))
-                .child("◆")
-                .child(
-                    div()
-                        .text_color(rgb(0x2F80ED))
-                        .text_sm()
-                        .child("Pulsar Engine")
-                )
-        )
-        .child(
-            div()
-                .flex()
-                .gap_4()
-                .child(div().text_lg().text_color(rgb(0x666666)).child("−"))
-                .child(div().text_lg().text_color(rgb(0x666666)).child("□"))
-                .child(div().text_lg().text_color(rgb(0x666666)).child("×"))
-        )
+            .size_full()
+            .flex()
+            .h_8()
+            .items_center()
+            .px_4()
+            .bg(rgb(0x0A0A0A))
+            .child(
+                div()
+                    .flex()
+                    .gap_6()
+                    .text_color(rgb(0xCCCCCC))
+                    .text_sm()
+                    .children(vec![
+                        div()
+                            .cursor_pointer()
+                            .child("File"),
+                        div()
+                            .cursor_pointer()
+                            .child("Edit"),
+                        div()
+                            .cursor_pointer()
+                            .child("View"),
+                        div()
+                            .cursor_pointer()
+                            .child("Go"),
+                        div()
+                            .cursor_pointer()
+                            .child("Run"),
+                        div()
+                            .cursor_pointer()
+                            .child("Terminal"),
+                        div()
+                            .cursor_pointer()
+                            .child("Window"),
+                        div()
+                            .cursor_pointer()
+                            .child("Help"),
+                    ])
+            )
     }
 }
