@@ -2,7 +2,8 @@ use gpui::{div, IntoElement, ParentElement, Render, ViewContext, VisualContext, 
 
 use crate::components::{
     title_bar::TitleBar,
-    menu_bar::AppMenuBar
+    menu_bar::AppMenuBar,
+    tabs_bar::TabBar,
 };
 
 
@@ -18,7 +19,8 @@ impl Render for App {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         div().children(vec![
             TitleBar::new(cx).into_any_element(),
-            AppMenuBar::new(cx).into_any_element()
+            AppMenuBar::new(cx).into_any_element(),
+            TabBar::new(cx).into_any_element(),
         ])
     }
 }

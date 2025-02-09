@@ -29,6 +29,25 @@ impl Render for AppMenuBar {
                         div()
                             .cursor_pointer()
                             .child("File"),
+
+                            // TODO - Add the correct styles to make this dropdown work properly
+                            //.children(vec![
+                            //    div()
+                            //        .cursor_pointer()
+                            //        .child("New"),
+                            //    div()
+                            //        .cursor_pointer()
+                            //        .child("Open"),
+                            //    div()
+                            //        .cursor_pointer()
+                            //        .child("Save"),
+                            //    div()
+                            //        .cursor_pointer()
+                            //        .child("Save As"),
+                            //    div()
+                            //        .cursor_pointer()
+                            //        .child("Close"),
+                            //]),
                         div()
                             .cursor_pointer()
                             .child("Edit"),
