@@ -14,7 +14,7 @@ pub enum EditorType {
     Inspector,
 }
 
-pub impl EditorType {
+impl EditorType {
     pub fn all() -> Vec<EditorType> {
         vec![
             EditorType::Level,
