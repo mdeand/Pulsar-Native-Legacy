@@ -14,6 +14,20 @@ pub enum EditorType {
     Inspector,
 }
 
+pub impl EditorType {
+    pub fn all() -> Vec<EditorType> {
+        vec![
+            EditorType::Level,
+            EditorType::Terrain,
+            EditorType::Scene,
+            EditorType::Animation,
+            EditorType::Console,
+            EditorType::Inspector,
+        ]
+    }
+}
+
+
 #[derive(Clone, Debug)]
 struct TabInstance {
     id: usize,
@@ -173,14 +187,7 @@ impl Render for TabBar {
                                                     .flex()
                                                     .flex_col()
                                                     .gap_1()
-                                                    .children(vec![
-                                                        EditorType::Level,
-                                                        EditorType::Terrain,
-                                                        EditorType::Scene,
-                                                        EditorType::Animation,
-                                                        EditorType::Console,
-                                                        EditorType::Inspector,
-                                                    ].iter().map(|editor_type| {
+                                                    .children(EditorType::all().iter().map(|editor_type| {
                                                         let editor_type = *editor_type;
                                                         div()
                                                             .px_4()
