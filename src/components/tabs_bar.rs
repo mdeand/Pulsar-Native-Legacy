@@ -25,6 +25,51 @@ impl EditorType {
             EditorType::Inspector,
         ]
     }
+
+    pub fn from_str(s: &str) -> Option<EditorType> {
+        match s {
+            "Level" => Some(EditorType::Level),
+            "Terrain" => Some(EditorType::Terrain),
+            "Scene" => Some(EditorType::Scene),
+            "Animation" => Some(EditorType::Animation),
+            "Console" => Some(EditorType::Console),
+            "Inspector" => Some(EditorType::Inspector),
+            _ => None,
+        }
+    }
+
+    pub fn to_str(&self) -> &str {
+        match self {
+            EditorType::Level => "Level",
+            EditorType::Terrain => "Terrain",
+            EditorType::Scene => "Scene",
+            EditorType::Animation => "Animation",
+            EditorType::Console => "Console",
+            EditorType::Inspector => "Inspector",
+        }
+    }
+
+    pub fn icon(&self) -> &str {
+        match self {
+            EditorType::Level => "🗺️",
+            EditorType::Terrain => "🌍",
+            EditorType::Scene => "🏞️",
+            EditorType::Animation => "🎞️",
+            EditorType::Console => "💻",
+            EditorType::Inspector => "🔍",
+        }
+    }
+
+    pub fn title(&self) -> &str {
+        match self {
+            EditorType::Level => "Level Editor",
+            EditorType::Terrain => "Terrain Editor",
+            EditorType::Scene => "Scene View",
+            EditorType::Animation => "Animation Timeline",
+            EditorType::Console => "Console Output",
+            EditorType::Inspector => "Inspector",
+        }
+    }
 }
 
 
