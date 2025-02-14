@@ -1,4 +1,4 @@
-use gpui::{div, rgb, InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, WindowContext, VisualContext, MouseButton};
+use gpui::{div, rgb,InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, WindowContext, VisualContext, MouseButton};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
@@ -35,10 +35,10 @@ struct TabInstance {
     title: String,
 }
 
-static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0);
-static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);
-static OPEN_TABS: Lazy<Mutex<Vec<TabInstance>>> = Lazy::new(|| Mutex::new(Vec::new()));
+static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);  // The next tab ID to be assigned
+static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0); // The ID of the currently selected tab
 static SHOW_NEW_TAB_MENU: AtomicUsize = AtomicUsize::new(0); // 0 = hidden, 1 = shown
+static OPEN_TABS: Lazy<Mutex<Vec<TabInstance>>> = Lazy::new(|| Mutex::new(Vec::new())); // A mutex to protect the vector of tabs
 
 pub struct TabBar;
 
