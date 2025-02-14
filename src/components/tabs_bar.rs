@@ -70,6 +70,17 @@ impl EditorType {
             EditorType::Inspector => "Inspector",
         }
     }
+
+    pub fn description(&self) -> &str {
+        match self {
+            EditorType::Level => "Edit levels and game worlds.",
+            EditorType::Terrain => "Edit terrain and landscapes.",
+            EditorType::Scene => "View and edit scenes.",
+            EditorType::Animation => "Create and edit animations.",
+            EditorType::Console => "View console output.",
+            EditorType::Inspector => "Inspect game objects and properties.",
+        }
+    }
 }
 
 
