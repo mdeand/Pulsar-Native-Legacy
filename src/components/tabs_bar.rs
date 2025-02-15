@@ -1,114 +1,44 @@
-use gpui::{div, rgb,InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, WindowContext, VisualContext, MouseButton};
+use gpui::{div, rgb, InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, WindowContext, VisualContext, MouseButton};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
+use super::editor_plugin::{EditorMetadata, EditorView};
+use super::tab_instance::TabInstance;
 use once_cell::sync::Lazy;
 use crate::app::App;
+use super::tab_registry::{get_all_editors, get_editor, register_editor};
 
-#[derive(Clone, Debug, PartialEq, Copy)]
-pub enum EditorType {
-    Level,
-    Terrain,
-    Scene,
-    Animation,
-    Console,
-    Inspector,
-}
+use super::editors::level::LevelEditor;
 
-impl EditorType {
-    pub fn all() -> Vec<EditorType> {
-        vec![
-            EditorType::Level,
-            EditorType::Terrain,
-            EditorType::Scene,
-            EditorType::Animation,
-            EditorType::Console,
-            EditorType::Inspector,
-        ]
-    }
-
-    pub fn from_str(s: &str) -> Option<EditorType> {
-        match s {
-            "Level" => Some(EditorType::Level),
-            "Terrain" => Some(EditorType::Terrain),
-            "Scene" => Some(EditorType::Scene),
-            "Animation" => Some(EditorType::Animation),
-            "Console" => Some(EditorType::Console),
-            "Inspector" => Some(EditorType::Inspector),
-            _ => None,
-        }
-    }
-
-    pub fn to_str(&self) -> &str {
-        match self {
-            EditorType::Level => "Level",
-            EditorType::Terrain => "Terrain",
-            EditorType::Scene => "Scene",
-            EditorType::Animation => "Animation",
-            EditorType::Console => "Console",
-            EditorType::Inspector => "Inspector",
-        }
-    }
-
-    pub fn icon(&self) -> &str {
-        match self {
-            EditorType::Level => "🗺️",
-            EditorType::Terrain => "🌍",
-            EditorType::Scene => "🏞️",
-            EditorType::Animation => "🎞️",
-            EditorType::Console => "💻",
-            EditorType::Inspector => "🔍",
-        }
-    }
-
-    pub fn title(&self) -> &str {
-        match self {
-            EditorType::Level => "Level Editor",
-            EditorType::Terrain => "Terrain Editor",
-            EditorType::Scene => "Scene View",
-            EditorType::Animation => "Animation Timeline",
-            EditorType::Console => "Console Output",
-            EditorType::Inspector => "Inspector",
-        }
-    }
-
-    pub fn description(&self) -> &str {
-        match self {
-            EditorType::Level => "Edit levels and game worlds.",
-            EditorType::Terrain => "Edit terrain and landscapes.",
-            EditorType::Scene => "View and edit scenes.",
-            EditorType::Animation => "Create and edit animations.",
-            EditorType::Console => "View console output.",
-            EditorType::Inspector => "Inspect game objects and properties.",
-        }
-    }
-}
-
-
-#[derive(Clone, Debug)]
-struct TabInstance {
-    id: usize,
-    editor_type: EditorType,
-    title: String,
-}
-
-static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);  // The next tab ID to be assigned
-static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0); // The ID of the currently selected tab
-static SHOW_NEW_TAB_MENU: AtomicUsize = AtomicUsize::new(0); // 0 = hidden, 1 = shown
-static OPEN_TABS: Lazy<Mutex<Vec<TabInstance>>> = Lazy::new(|| Mutex::new(Vec::new())); // A mutex to protect the vector of tabs
+static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);
+static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0);
+static SHOW_NEW_TAB_MENU: AtomicUsize = AtomicUsize::new(0);
+static OPEN_TABS: Lazy<Mutex<Vec<TabInstance>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 pub struct TabBar;
 
 impl TabBar {
     pub fn new(cx: &mut ViewContext<App>) -> gpui::View<Self> {
+        // Register default editors
+        Self::register_default_editors();
         cx.new_view(|_| Self)
     }
 
-    pub fn add_tab(editor_type: EditorType) -> usize {
+    fn register_default_editors() {
+        // Register built-in editors here
+        register_editor(LevelEditor);
+        // register_editor(Box::new(TerrainEditor));
+        // register_editor(Box::new(SceneEditor));
+        // register_editor(Box::new(AnimationEditor));
+        // register_editor(Box::new(ConsoleEditor));
+        // register_editor(Box::new(InspectorEditor));
+    }
+
+    pub fn add_tab(editor_name: &str) -> usize {
         let id = NEXT_TAB_ID.fetch_add(1, Ordering::Relaxed);
         let instance = TabInstance {
             id,
-            editor_type,
-            title: format!("{:?}", editor_type),
+            editor_name: editor_name.to_string(),
+            title: editor_name.to_string(),
         };
         
         let mut tabs = OPEN_TABS.lock().unwrap();
@@ -141,7 +71,6 @@ impl Render for TabBar {
             .size_full()
             .flex()
             .flex_col()
-            // Add a click handler to the root element to close the menu when clicking outside
             .on_mouse_down(MouseButton::Left, move |_: &gpui::MouseDownEvent, cx: &mut WindowContext| {
                 if show_menu {
                     SHOW_NEW_TAB_MENU.store(0, Ordering::Relaxed);
@@ -149,7 +78,6 @@ impl Render for TabBar {
                 }
             })
             .child(
-                // Tab headers and new tab button
                 div()
                     .flex()
                     .h_12()
@@ -207,7 +135,6 @@ impl Render for TabBar {
                                         )
                                 }).collect();
 
-                                // Add new tab button
                                 elements.push(
                                     div()
                                         .on_mouse_down(MouseButton::Left, move |_: &gpui::MouseDownEvent, cx: &mut WindowContext| {
@@ -226,7 +153,6 @@ impl Render for TabBar {
                                         .child("+")
                                 );
 
-                                // Add new tab menu if shown
                                 if show_menu {
                                     elements.push(
                                         div()
@@ -243,8 +169,8 @@ impl Render for TabBar {
                                                     .flex()
                                                     .flex_col()
                                                     .gap_1()
-                                                    .children(EditorType::all().iter().map(|editor_type| {
-                                                        let editor_type = *editor_type;
+                                                    .children(get_all_editors().iter().map(|editor| {
+                                                        let editor_name = editor.name().to_string();
                                                         div()
                                                             .px_4()
                                                             .py_2()
@@ -253,11 +179,11 @@ impl Render for TabBar {
                                                             .cursor_pointer()
                                                             .hover(|s| s.bg(rgb(0x2F80ED)))
                                                             .on_mouse_down(MouseButton::Left, move |_: &gpui::MouseDownEvent, cx: &mut WindowContext| {
-                                                                TabBar::add_tab(editor_type);
+                                                                TabBar::add_tab(&editor_name);
                                                                 SHOW_NEW_TAB_MENU.store(0, Ordering::Relaxed);
                                                                 cx.refresh();
                                                             })
-                                                            .child(format!("{:?}", editor_type))
+                                                            .child(format!("{}", editor.title()))
                                                     }))
                                             )
                                     );
@@ -268,7 +194,6 @@ impl Render for TabBar {
                     )
             )
             .child(
-                // Tab content
                 {
                     let current_tab = SELECTED_TAB.load(Ordering::Relaxed);
                     let current_tab_info = tabs.iter().find(|t| t.id == current_tab);
@@ -278,40 +203,17 @@ impl Render for TabBar {
                         .bg(rgb(0x141414))
                         .p_4()
                         .child(
-                            match current_tab_info.map(|t| &t.editor_type) {
-                                Some(EditorType::Level) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .child("Level Editor Content")
-                                    .size_full(),
-                                Some(EditorType::Terrain) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .child("Terrain Editor Content")
-                                    .size_full(),
-                                Some(EditorType::Scene) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .child("Scene View Content")
-                                    .size_full(),
-                                Some(EditorType::Animation) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .child("Animation Timeline")
-                                    .size_full(),
-                                Some(EditorType::Console) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .bg(rgb(0x0A0A0A))
-                                    .size_full()
-                                    .p_2()
-                                    .child("Console Output"),
-                                Some(EditorType::Inspector) => div()
-                                    .text_color(rgb(0xE0E0E0))
-                                    .flex()
-                                    .flex_col()
-                                    .gap_2()
-                                    .size_full()
-                                    .children(vec![
-                                        div().child("Properties"),
-                                        div().child("Components"),
-                                    ]),
-                                None => div()
+                            if let Some(tab) = current_tab_info {
+                                if let Some(editor) = get_editor(&tab.editor_name) {
+                                    let instance = editor.create_view(cx);
+                                    div().child(instance.render(cx))
+                                } else {
+                                    div()
+                                        .text_color(rgb(0x808080))
+                                        .child("Editor not found")
+                                }
+                            } else {
+                                div()
                                     .text_color(rgb(0x808080))
                                     .child("No Tab Selected")
                             }
