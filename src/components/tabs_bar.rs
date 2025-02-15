@@ -1,13 +1,12 @@
 use gpui::{div, rgb, InteractiveElement, IntoElement, ParentElement, Render, Styled, ViewContext, WindowContext, VisualContext, MouseButton};
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::Mutex;
+use super::tab_registry::{get_all_editors, get_editor, register_editor};
 use super::editor_plugin::{EditorMetadata, EditorView};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use super::editors::level::LevelEditor;
 use super::tab_instance::TabInstance;
 use once_cell::sync::Lazy;
+use std::sync::Mutex;
 use crate::app::App;
-use super::tab_registry::{get_all_editors, get_editor, register_editor};
-
-use super::editors::level::LevelEditor;
 
 static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);
 static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0);
@@ -171,6 +170,7 @@ impl Render for TabBar {
                                                     .gap_1()
                                                     .children(get_all_editors().iter().map(|editor| {
                                                         let editor_name = editor.name().to_string();
+                                                        let editor_icon: String = editor.icon().to_string(); //TODO: use icon in tabs list to display in the tabe title slot
                                                         div()
                                                             .px_4()
                                                             .py_2()

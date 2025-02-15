@@ -20,8 +20,8 @@ impl EditorMetadata for LevelEditor {
 impl EditorView for LevelEditorView {
     fn render(&self, _cx: &mut ViewContext<TabBar>) -> impl gpui::Element {
         div()
-            .text_color(rgb(0xE0E0E0))
-            .child("Level Editor Content")
+            .text_color(rgb(0x555555))
+            .child("This is the Level Editor Content")
             .size_full()
     }
 }
