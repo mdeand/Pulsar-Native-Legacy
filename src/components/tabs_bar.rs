@@ -26,11 +26,11 @@ impl TabBar {
     fn register_default_editors() {
         // Register built-in editors here
         register_editor(LevelEditor);
-        // register_editor(Box::new(TerrainEditor));
-        // register_editor(Box::new(SceneEditor));
-        // register_editor(Box::new(AnimationEditor));
-        // register_editor(Box::new(ConsoleEditor));
-        // register_editor(Box::new(InspectorEditor));
+        // register_editor(TerrainEditor);
+        // register_editor(SceneEditor);
+        // register_editor(AnimationEditor);
+        // register_editor(ConsoleEditor);
+        // register_editor(InspectorEditor);
     }
 
     pub fn add_tab(editor_name: &str) -> usize {
