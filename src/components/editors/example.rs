@@ -3,19 +3,19 @@ use super::super::editor_plugin::{EditorMetadata, EditorView};
 use crate::components::tabs_bar::TabBar;
 
 #[derive(Clone)]
-pub struct LevelEditor;
-pub struct LevelEditorView {
+pub struct ExampleEditor;
+pub struct ExampleEditorView {
     random_number: u32,
 }
 
-impl EditorMetadata for LevelEditor {
-    fn name(&self)        -> &'static str { "Level" }
+impl EditorMetadata for ExampleEditor {
+    fn name(&self)        -> &'static str { "Example" }
     fn icon(&self)        -> &'static str { "🗺️" }
-    fn title(&self)       -> &'static str { "Level Editor" }
-    fn description(&self) -> &'static str { "Edit levels and game worlds." }
+    fn title(&self)       -> &'static str { "Example Editor" }
+    fn description(&self) -> &'static str { "Editor for showing how editor tabs are created." }
     
     fn create_view(&self, _cx: &mut ViewContext<TabBar>) -> Box<(dyn EditorView + 'static)> {
-        Box::new(LevelEditorView {
+        Box::new(ExampleEditorView {
             random_number: rand::random::<u32>() % 1000,
         })
     }
@@ -25,11 +25,11 @@ impl EditorMetadata for LevelEditor {
     }
 }
 
-impl EditorView for LevelEditorView {
+impl EditorView for ExampleEditorView {
     fn render(&self, _cx: &mut ViewContext<TabBar>) -> AnyElement {
         div()
             .text_color(rgb(0x555555))
-            .child(format!("Level Editor View: {}", self.random_number))
+            .child(format!("Example Editor View: {}", self.random_number))
             .size_full()
             .into_any()
     }

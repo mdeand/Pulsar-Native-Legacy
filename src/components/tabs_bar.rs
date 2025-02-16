@@ -2,11 +2,15 @@ use gpui::{div, rgb, InteractiveElement, IntoElement, ParentElement, Render, Sty
 use super::tab_registry::{get_all_editors, get_editor, register_editor};
 use super::editor_plugin::{EditorMetadata, EditorView};
 use std::sync::atomic::{AtomicUsize, Ordering};
-use super::editors::level::LevelEditor;
 use super::tab_instance::TabInstance;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use crate::app::App;
+
+
+use super::editors::level::LevelEditor;
+use super::editors::example::ExampleEditor;
+
 
 static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);
 static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0);
@@ -25,6 +29,7 @@ impl TabBar {
     fn register_default_editors() {
         // Register built-in editors here
         register_editor(LevelEditor);
+        register_editor(ExampleEditor);
         // register_editor(TerrainEditor);
         // register_editor(SceneEditor);
         // register_editor(AnimationEditor);
