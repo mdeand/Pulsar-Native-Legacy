@@ -31,7 +31,7 @@ impl TabBar {
         register_editor(LevelEditor);
         register_editor(ExampleEditor);
         // register_editor(TerrainEditor);
-        // register_editor(SceneEditor);
+        // register_editor(Scen`eEditor);
         // register_editor(AnimationEditor);
         // register_editor(ConsoleEditor);
         // register_editor(InspectorEditor);

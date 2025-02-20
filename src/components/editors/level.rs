@@ -1,4 +1,4 @@
-use gpui::{div, rgb, AnyElement, Element, ParentElement, Styled, ViewContext};
+use gpui::{canvas, div, rgb, AnyElement, Canvas, Element, ParentElement, Styled, ViewContext};
 use super::super::editor_plugin::{EditorMetadata, EditorView};
 use crate::components::tabs_bar::TabBar;
 
@@ -27,10 +27,23 @@ impl EditorMetadata for LevelEditor {
 
 impl EditorView for LevelEditorView {
     fn render(&self, _cx: &mut ViewContext<TabBar>) -> AnyElement {
+        fn prepaint() {
+
+        }
+        fn paint() {
+
+        }
+
         div()
-            .text_color(rgb(0x555555))
-            .child(format!("Level Editor View: {}", self.random_number))
+            .text_color(rgb(0xffffff))
+            .child(div()
+                .text_color(rgb(0x555555))
+                .child(format!("Level Editor View: {}", self.random_number))
+                .size_full()
+                .h_full()
+            )
             .size_full()
+            .h_full()
             .into_any()
     }
 }
