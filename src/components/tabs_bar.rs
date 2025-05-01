@@ -10,7 +10,7 @@ use crate::app::App;
 
 use super::editors::level::LevelEditor;
 use super::editors::example::ExampleEditor;
-
+use super::editors::asterisk::AsteriskEditor;
 
 static NEXT_TAB_ID: AtomicUsize = AtomicUsize::new(0);
 static SELECTED_TAB: AtomicUsize = AtomicUsize::new(0);
@@ -30,6 +30,7 @@ impl TabBar {
         // Register built-in editors here
         register_editor(LevelEditor);
         register_editor(ExampleEditor);
+        register_editor(AsteriskEditor);
         // register_editor(TerrainEditor);
         // register_editor(Scen`eEditor);
         // register_editor(AnimationEditor);
