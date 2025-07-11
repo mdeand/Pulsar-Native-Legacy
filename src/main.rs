@@ -1,62 +1,38 @@
-use gpui::{
-    div, prelude::*, px, rgb, size, App, Application, 
-    Bounds, Context, SharedString, TitlebarOptions, 
-    Window, WindowBounds, WindowOptions
-};
+use std::{thread::sleep, time::Duration};
 
-mod components; // We'll create this module for UI components
-use components::{top_bar, menu_bar, tab_bar, main_content, status_bar, Tab};
+use gpui::{*, App as Application};
+// use tokio::time::sleep;
 
-struct GameEngine {
-    title: SharedString,
-    branch: SharedString,
-    fps: SharedString,
-    memory: SharedString,
-    time: SharedString,
-}
+mod app;
+mod components;
 
-impl Render for GameEngine {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .flex_col()
-            .size_full()
-            .bg(rgb(0x000000)) // Pure black background
-            .child(top_bar("PULSAR ENGINE".into()))
-            .child(menu_bar())
-            .child(tab_bar(0, &vec!["Tab 1", "Tab 2", "Tab 3"]))
-            .child(main_content(&Tab::LevelEditor))
-            .child(status_bar(
-                self.fps.clone(), 
-                self.memory.clone(), 
-                self.time.clone(), 
-                self.branch.clone())
-            )
-    }
-}
+#[tokio::main]
+async fn main() {
+    let app = Application::new();
+    
+    app.background_executor().spawn((async || loop {
+        sleep(Duration::from_secs(1));
+        println!("testing");
+    })()).detach();
 
-fn main() {
-    Application::new().run(|cx: &mut App| {
+
+    app.run(|cx: &mut AppContext| {
         let bounds = Bounds::centered(None, size(px(1280.0), px(800.0)), cx);
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
                     appears_transparent: true,
+                    title: Some("Pulsar Engine".into()),
                     ..Default::default()
                 }),
+
                 ..Default::default()
             },
-            |_, cx| {
-                cx.new(|_| GameEngine {
-                    title: "PULSAR ENGINE".into(),
-                    branch: "feature/physics-update".into(),
-                    fps: "3001".into(),
-                    memory: "548".into(),
-                    time: "11:40:19 PM".into(),
-                })
+            |cx| {
+                app::App::new(cx)
             },
         )
         .unwrap();
-    });
+    })
 }
