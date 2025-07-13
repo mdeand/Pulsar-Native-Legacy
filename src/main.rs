@@ -134,22 +134,45 @@ async fn main() {
                             target_fps
                         );
                         
-                        // Much more lenient adaptation thresholds
-                        // Only reduce FPS if we're really struggling
-                        if (consistency_score > 2.0 || std_dev_ms > 5.0 || missed_frames > 50) && target_fps > 60 {
-                            target_fps = (target_fps * 4 / 5).max(60); // Reduce by 20%, minimum 60
+                        // Adaptive thresholds based on current FPS
+                        let max_acceptable_std_dev = if target_fps >= 200 { 2.0 } else { 3.0 }; // Stricter at higher FPS
+                        let max_consistency_score = if target_fps >= 200 { 1.0 } else { 1.5 };
+                        
+                        // Reduce FPS only if really struggling
+                        if (consistency_score > max_consistency_score || std_dev_ms > max_acceptable_std_dev || missed_frames > 30) && target_fps > 60 {
+                            let reduction = if missed_frames > 50 { 40 } else { 20 }; // Bigger drop if really bad
+                            target_fps = (target_fps.saturating_sub(reduction)).max(60);
                             target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
-                            println!("ADAPTED: Reducing target FPS to {} due to poor performance", target_fps);
+                            println!("ADAPTED: Reducing target FPS to {} (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
+                                target_fps, consistency_score, std_dev_ms, missed_frames);
                         } 
-                        // Only increase if performance is really solid
-                        else if consistency_score < 0.3 && std_dev_ms < 1.0 && missed_frames == 0 && target_fps < 240 {
-                            target_fps = (target_fps + 15).min(240); // Increase more gradually
-                            target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
-                            println!("ADAPTED: Increasing target FPS to {} due to excellent performance", target_fps);
+                        // Be more aggressive about increasing FPS
+                        else if target_fps < 240 {
+                            let can_increase = if target_fps < 120 {
+                                // Below 120 FPS - be very liberal about increasing
+                                consistency_score < 1.0 && std_dev_ms < 4.0 && missed_frames < 10
+                            } else if target_fps < 180 {
+                                // 120-180 FPS - moderately strict
+                                consistency_score < 0.8 && std_dev_ms < 2.5 && missed_frames < 5
+                            } else {
+                                // Above 180 FPS - be strict about quality
+                                consistency_score < 0.5 && std_dev_ms < 1.5 && missed_frames == 0
+                            };
+                            
+                            if can_increase {
+                                let increase = if target_fps < 120 { 30 } else if target_fps < 180 { 20 } else { 10 };
+                                target_fps = (target_fps + increase).min(240);
+                                target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
+                                println!("ADAPTED: Increasing target FPS to {} (performance is good)", target_fps);
+                            } else {
+                                println!("STABLE: Maintaining {} FPS (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
+                                    target_fps, consistency_score, std_dev_ms, missed_frames);
+                            }
                         }
-                        // Just log current performance without changes
+                        // At max FPS
                         else {
-                            println!("STABLE: Performance is acceptable, maintaining {} FPS", target_fps);
+                            println!("MAX: At {} FPS limit (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
+                                target_fps, consistency_score, std_dev_ms, missed_frames);
                         }
                         
                         missed_frames = 0;
