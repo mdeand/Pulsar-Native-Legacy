@@ -1,10 +1,15 @@
-use gpui::{ElementId, GlobalElementId, WindowContext, LayoutId, Bounds, Pixels, Corners, ImageData};
-use crate::components::tab_system::{TabContentProvider, RegisterableTab};
-use std::sync::Arc;
 use gpui::{
+    ElementId, GlobalElementId, WindowContext, LayoutId, Bounds, Pixels, Corners, ImageData,
     div, rgb, AnyElement, IntoElement, ParentElement, Styled, InteractiveElement, px
 };
+use crate::components::tab_system::{TabContentProvider, RegisterableTab};
+use once_cell::sync::Lazy;
+use std::time::Instant;
+use rayon::prelude::*;
+use std::sync::Mutex;
+use image::RgbaImage;
 use gpui::prelude::*;
+use std::sync::Arc;
 
 // --- Content Provider ---
 // This struct defines the actual content and appearance of the level editor tab.
@@ -141,14 +146,6 @@ impl TabContentProvider for LevelEditorContentProvider {
     }
 }
 
-
-// --- Animated Framebuffer Viewport ---
-use once_cell::sync::Lazy;
-use std::sync::Mutex;
-use std::time::Instant;
-use image::RgbaImage;
-use rayon::prelude::*;
-
 static ANIMATION_START_TIME: Lazy<Instant> = Lazy::new(Instant::now);
 static PAINT_TIMES: Lazy<Mutex<Vec<u128>>> = Lazy::new(|| Mutex::new(Vec::with_capacity(60)));
 static PAINT_LAST_60: Lazy<Mutex<Option<u128>>> = Lazy::new(|| Mutex::new(None));
@@ -162,7 +159,7 @@ pub struct MySurface {
 impl MySurface {
     pub fn new() -> Self {
         let width = 400;
-        let height = 300;
+        let height = 600;
         Self {
             framebuffer: Arc::new(Mutex::new(RgbaImage::new(width, height))),
             width,
@@ -195,7 +192,7 @@ impl Element for MySurface {
                     }),
                     height: Pixels(match requested_size.height {
                         gpui::AvailableSpace::Definite(px) => px.0,
-                        _ => 300.0,
+                        _ => 600.0,
                     }),
                 }
             }),
