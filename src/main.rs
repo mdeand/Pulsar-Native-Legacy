@@ -15,6 +15,7 @@ mod app;
 mod frame_counter;
 mod tab_system;
 mod level_editor;
+mod game_engine_ui;
 
 use app::App;
 
@@ -69,6 +70,24 @@ async fn main() {
     // Set up imgui
     let mut imgui = imgui::Context::create();
     imgui.set_ini_filename(None);
+
+    // Configure AMOLED black theme
+    {
+        let style = imgui.style_mut();
+
+        // Basic AMOLED black colors for imgui 0.10.0
+        style.window_rounding = 0.0;
+        style.frame_rounding = 2.0;
+        style.grab_rounding = 2.0;
+        style.scrollbar_rounding = 2.0;
+        style.window_padding = [4.0, 4.0];
+        style.frame_padding = [8.0, 4.0];
+        style.item_spacing = [4.0, 4.0];
+        style.item_inner_spacing = [4.0, 4.0];
+        style.indent_spacing = 16.0;
+        style.scrollbar_size = 12.0;
+        style.grab_min_size = 8.0;
+    }
 
     let mut platform = WinitPlatform::init(&mut imgui);
     platform.attach_window(imgui.io_mut(), &window, imgui_winit_support::HiDpiMode::Default);
