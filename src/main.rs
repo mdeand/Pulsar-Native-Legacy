@@ -1,12 +1,22 @@
-use std::{thread::sleep, time::Duration};
+use std::time::Instant;
+use imgui::*;
+use imgui_wgpu::{Renderer, RendererConfig};
+use imgui_winit_support::WinitPlatform;
+use winit::{
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
+
 #[cfg(windows)]
 use windows_sys::Win32::System::Threading::{SetPriorityClass, GetCurrentProcess, HIGH_PRIORITY_CLASS};
 
-use gpui::{*, App as Application};
-
 mod app;
-mod components;
 mod frame_counter;
+mod tab_system;
+mod level_editor;
+
+use app::App;
 
 #[tokio::main]
 async fn main() {
@@ -16,232 +26,166 @@ async fn main() {
         let handle = GetCurrentProcess();
         SetPriorityClass(handle, HIGH_PRIORITY_CLASS);
     }
-    
-    let app = Application::new();
-    
-    app.background_executor().spawn((async || loop {
-        sleep(Duration::from_secs(1));
-        println!("testing");
-    })()).detach();
 
-    app.run(|cx: &mut AppContext| {
-        let bounds = Bounds::centered(None, size(px(1280.0), px(800.0)), cx);
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(bounds)),
-                titlebar: Some(TitlebarOptions {
-                    appears_transparent: true,
-                    title: Some("Pulsar Engine".into()),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |cx| {
-                app::App::new(cx)
-            },
-        )
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new()
+        .with_title("Pulsar Engine")
+        .with_inner_size(winit::dpi::LogicalSize::new(1280, 800))
+        .build(&event_loop)
         .unwrap();
 
-        // Adaptive frame rate system with smooth pacing
-        cx.spawn(|mut cx| async move {
-            println!("=== ADAPTIVE SMOOTH FRAME PACING ===");
-            
-            // Start with a reasonable target and adapt
-            let mut target_fps = 240u64;
-            let mut target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
-            
-            let mut last_stats = std::time::Instant::now();
-            let mut frames = 0u64;
-            let mut computation_frames = 0u64;
-            let mut next_frame_time = std::time::Instant::now();
-            
-            // Frame time tracking for consistency analysis
-            let mut frame_times = std::collections::VecDeque::with_capacity(120);
-            let mut missed_frames = 0u64;
-            let mut adaptation_timer = std::time::Instant::now();
-            
-            // Adaptive timing strategy
-            let mut use_spin_wait = true;
-            let mut frame_skip_threshold = Duration::from_millis(50); // 20 FPS minimum
-            
-            loop {
-                let frame_start = std::time::Instant::now();
-                
-                // Check if we're falling behind and should skip this frame
-                let behind_schedule = frame_start > next_frame_time + frame_skip_threshold;
-                
-                if behind_schedule {
-                    missed_frames += 1;
-                    // Reset timing to current time to avoid spiraling
-                    next_frame_time = frame_start;
-                    continue;
+    // Set up wgpu
+    let size = window.inner_size();
+    let instance = wgpu::Instance::default();
+    let surface = unsafe { instance.create_surface(&window).unwrap() };
+    let adapter = instance
+        .request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::HighPerformance,
+            force_fallback_adapter: false,
+            compatible_surface: Some(&surface),
+        })
+        .await
+        .expect("Failed to find an appropriate adapter");
+
+    let (device, queue) = adapter
+        .request_device(
+            &wgpu::DeviceDescriptor {
+                label: None,
+                features: wgpu::Features::empty(),
+                limits: wgpu::Limits::default(),
+            },
+            None,
+        )
+        .await
+        .expect("Failed to create device");
+
+    let mut config = surface
+        .get_default_config(&adapter, size.width, size.height)
+        .unwrap();
+    config.format = wgpu::TextureFormat::Bgra8UnormSrgb;
+    config.usage = wgpu::TextureUsages::RENDER_ATTACHMENT;
+    surface.configure(&device, &config);
+
+    // Set up imgui
+    let mut imgui = imgui::Context::create();
+    imgui.set_ini_filename(None);
+
+    let mut platform = WinitPlatform::init(&mut imgui);
+    platform.attach_window(imgui.io_mut(), &window, imgui_winit_support::HiDpiMode::Default);
+
+    let hidpi_factor = window.scale_factor();
+    let font_size = (13.0 * hidpi_factor) as f32;
+    imgui.fonts().add_font(&[
+        FontSource::DefaultFontData {
+            config: Some(imgui::FontConfig {
+                oversample_h: 1,
+                pixel_snap_h: true,
+                size_pixels: font_size,
+                ..Default::default()
+            }),
+        },
+    ]);
+
+    let renderer_config = RendererConfig {
+        texture_format: config.format,
+        ..Default::default()
+    };
+    let mut renderer = Renderer::new(&mut imgui, &device, &queue, renderer_config);
+
+    let mut app = App::new();
+
+    // Frame timing setup
+    let mut last_frame = Instant::now();
+    let mut frame_count = 0u64;
+    let mut fps_counter = Instant::now();
+
+    event_loop.run(move |event, _target, control_flow| {
+            *control_flow = ControlFlow::Poll;
+            platform.handle_event(imgui.io_mut(), &window, &event);
+
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::Resized(size),
+                    ..
+                } => {
+                    config.width = size.width.max(1);
+                    config.height = size.height.max(1);
+                    surface.configure(&device, &config);
                 }
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => *control_flow = ControlFlow::Exit,
+                Event::RedrawRequested(_) => {
+                    let now = Instant::now();
+                    imgui.io_mut().update_delta_time(now - last_frame);
+                    last_frame = now;
 
-                // Computation work
-                let comp_start = std::time::Instant::now();
-                {
-                    let mut frame = crate::frame_counter::GLOBAL_FRAME_COUNTER.lock().unwrap();
-                    *frame += 1;
-                }
-                computation_frames += 1;
-                let comp_time = comp_start.elapsed();
-
-                // Adaptive UI refresh rate based on performance
-                let ui_start = std::time::Instant::now();
-                let ui_refresh_interval = if target_fps > 120 { 2 } else { 1 };
-                let ui_time = if frames % ui_refresh_interval == 0 {
-                    cx.update(|cx| {
-                        cx.refresh();
-                    }).ok();
-                    ui_start.elapsed()
-                } else {
-                    Duration::ZERO
-                };
-
-                frames += 1;
-                let frame_elapsed = frame_start.elapsed();
-                
-                // Track frame time consistency
-                frame_times.push_back(frame_elapsed.as_nanos());
-                if frame_times.len() > 120 {
-                    frame_times.pop_front();
-                }
-
-                // Adaptive performance monitoring every 2 seconds
-                if adaptation_timer.elapsed().as_secs_f32() >= 2.0 {
-                    let frame_times_vec: Vec<u128> = frame_times.iter().cloned().collect();
-                    if frame_times_vec.len() > 10 {
-                        let avg_frame_time = frame_times_vec.iter().sum::<u128>() / frame_times_vec.len() as u128;
-                        let variance = frame_times_vec.iter()
-                            .map(|&x| {
-                                let diff = x as i128 - avg_frame_time as i128;
-                                (diff * diff) as u128
-                            })
-                            .sum::<u128>() / frame_times_vec.len() as u128;
-                        let std_dev = (variance as f64).sqrt();
-                        
-                        // Calculate frame consistency score (lower is better)
-                        let consistency_score = std_dev / avg_frame_time as f64;
-                        let avg_frame_time_ms = avg_frame_time as f64 / 1_000_000.0;
-                        let std_dev_ms = std_dev / 1_000_000.0;
-                        
-                        println!(
-                            "ADAPTATION: Avg: {:.2}ms | StdDev: {:.2}ms | Consistency: {:.3} | Missed: {} | FPS: {}",
-                            avg_frame_time_ms,
-                            std_dev_ms,
-                            consistency_score,
-                            missed_frames,
-                            target_fps
-                        );
-                        
-                        // Adaptive thresholds based on current FPS
-                        let max_acceptable_std_dev = if target_fps >= 200 { 2.0 } else { 3.0 }; // Stricter at higher FPS
-                        let max_consistency_score = if target_fps >= 200 { 1.0 } else { 1.5 };
-                        
-                        // Reduce FPS only if really struggling
-                        if (consistency_score > max_consistency_score || std_dev_ms > max_acceptable_std_dev || missed_frames > 30) && target_fps > 60 {
-                            let reduction = if missed_frames > 50 { 40 } else { 20 }; // Bigger drop if really bad
-                            target_fps = (target_fps.saturating_sub(reduction)).max(60);
-                            target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
-                            println!("ADAPTED: Reducing target FPS to {} (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
-                                target_fps, consistency_score, std_dev_ms, missed_frames);
-                        } 
-                        // Be more aggressive about increasing FPS
-                        else if target_fps < 240 {
-                            let can_increase = if target_fps < 120 {
-                                // Below 120 FPS - be very liberal about increasing
-                                consistency_score < 1.0 && std_dev_ms < 4.0 && missed_frames < 10
-                            } else if target_fps < 180 {
-                                // 120-180 FPS - moderately strict
-                                consistency_score < 0.8 && std_dev_ms < 2.5 && missed_frames < 5
-                            } else {
-                                // Above 180 FPS - be strict about quality
-                                consistency_score < 0.5 && std_dev_ms < 1.5 && missed_frames == 0
-                            };
-                            
-                            if can_increase {
-                                let increase = if target_fps < 120 { 30 } else if target_fps < 180 { 20 } else { 10 };
-                                target_fps = (target_fps + increase).min(240);
-                                target_frame_time = Duration::from_nanos(1_000_000_000 / target_fps);
-                                println!("ADAPTED: Increasing target FPS to {} (performance is good)", target_fps);
-                            } else {
-                                println!("STABLE: Maintaining {} FPS (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
-                                    target_fps, consistency_score, std_dev_ms, missed_frames);
-                            }
+                    let frame = match surface.get_current_texture() {
+                        Ok(frame) => frame,
+                        Err(e) => {
+                            eprintln!("dropped frame: {e:?}");
+                            return;
                         }
-                        // At max FPS
-                        else {
-                            println!("MAX: At {} FPS limit (consistency: {:.2}, std_dev: {:.2}ms, missed: {})", 
-                                target_fps, consistency_score, std_dev_ms, missed_frames);
-                        }
-                        
-                        missed_frames = 0;
-                    }
-                    adaptation_timer = std::time::Instant::now();
-                }
-
-                // Print stats every second
-                if last_stats.elapsed().as_secs_f32() >= 1.0 {
-                    let actual_fps = frames as f64 / last_stats.elapsed().as_secs_f64();
-                    let computation_fps = computation_frames as f64 / last_stats.elapsed().as_secs_f64();
-                    
-                    // Calculate frame time statistics
-                    let frame_times_vec: Vec<u128> = frame_times.iter().cloned().collect();
-                    let (min_time, max_time, avg_time) = if !frame_times_vec.is_empty() {
-                        let min = *frame_times_vec.iter().min().unwrap() as f64 / 1_000_000.0;
-                        let max = *frame_times_vec.iter().max().unwrap() as f64 / 1_000_000.0;
-                        let avg = frame_times_vec.iter().sum::<u128>() as f64 / frame_times_vec.len() as f64 / 1_000_000.0;
-                        (min, max, avg)
-                    } else {
-                        (0.0, 0.0, 0.0)
                     };
-                    
-                    println!(
-                        "Target: {} FPS | Actual: {:.1} FPS | Comp: {:.1} FPS | Frame: {:.3}ms [{:.2}-{:.2}ms] | Comp: {}μs | UI: {}μs",
-                        target_fps,
-                        actual_fps,
-                        computation_fps,
-                        avg_time,
-                        min_time,
-                        max_time,
-                        comp_time.as_nanos() / 1000,
-                        ui_time.as_nanos() / 1000
-                    );
-                    frames = 0;
-                    computation_frames = 0;
-                    last_stats = std::time::Instant::now();
-                }
 
-                // Smart timing strategy for smooth pacing
-                next_frame_time += target_frame_time;
-                let now = std::time::Instant::now();
-                
-                if next_frame_time > now {
-                    let sleep_time = next_frame_time - now;
-                    
-                    if sleep_time < Duration::from_micros(100) {
-                        // Very short delay - spin wait for precision
-                        while std::time::Instant::now() < next_frame_time {
-                            std::hint::spin_loop();
-                        }
-                    } else if sleep_time < Duration::from_micros(1000) && use_spin_wait {
-                        // Short delay - hybrid approach
-                        let spin_start = next_frame_time - Duration::from_micros(200);
-                        if sleep_time > Duration::from_micros(300) {
-                            std::thread::sleep(sleep_time - Duration::from_micros(200));
-                        }
-                        while std::time::Instant::now() < next_frame_time {
-                            std::hint::spin_loop();
-                        }
-                    } else {
-                        // Longer delay - use async timer
-                        cx.background_executor().timer(sleep_time).await;
+                    platform
+                        .prepare_frame(imgui.io_mut(), &window)
+                        .expect("Failed to prepare frame");
+
+                    let ui = imgui.frame();
+
+                    // Update frame counter
+                    frame_count += 1;
+                    if fps_counter.elapsed().as_secs() >= 1 {
+                        frame_counter::update_fps(frame_count);
+                        frame_count = 0;
+                        fps_counter = Instant::now();
                     }
-                } else {
-                    // We're behind - don't sleep, just continue
-                    next_frame_time = now;
+
+                    // Run the app - check for valid display size to avoid ClipRect assertion
+                    let io = ui.io();
+                    if io.display_size[0] > 10.0 && io.display_size[1] > 10.0 {
+                        app.run(&ui);
+                    }
+
+                    let mut encoder: wgpu::CommandEncoder = device.create_command_encoder(
+                        &wgpu::CommandEncoderDescriptor { label: None }
+                    );
+
+                    let view = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+                    let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: None,
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &view,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(wgpu::Color {
+                                    r: 0.06,
+                                    g: 0.06,
+                                    b: 0.06,
+                                    a: 1.0,
+                                }),
+                                store: true,
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                    });
+
+                    let draw_data = imgui.render();
+                    renderer
+                        .render(&draw_data, &queue, &device, &mut rpass)
+                        .expect("Rendering failed");
+
+                    drop(rpass);
+
+                    queue.submit(Some(encoder.finish()));
+                    frame.present();
                 }
+                Event::MainEventsCleared => {
+                    window.request_redraw();
+                }
+                _ => {}
             }
-        }).detach();
-    })
+        })
 }
