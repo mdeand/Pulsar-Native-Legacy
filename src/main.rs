@@ -16,6 +16,7 @@ mod frame_counter;
 mod tab_system;
 mod level_editor;
 mod game_engine_ui;
+mod ui;
 
 use app::App;
 
@@ -31,7 +32,9 @@ async fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_title("Pulsar Engine")
-        .with_inner_size(winit::dpi::LogicalSize::new(1280, 800))
+        .with_inner_size(winit::dpi::LogicalSize::new(1600, 1000))
+        .with_resizable(true)
+        .with_maximized(false)
         .build(&event_loop)
         .unwrap();
 
@@ -71,35 +74,26 @@ async fn main() {
     let mut imgui = imgui::Context::create();
     imgui.set_ini_filename(None);
 
-    // Configure AMOLED black theme
-    {
-        let style = imgui.style_mut();
-
-        // Basic AMOLED black colors for imgui 0.10.0
-        style.window_rounding = 0.0;
-        style.frame_rounding = 2.0;
-        style.grab_rounding = 2.0;
-        style.scrollbar_rounding = 2.0;
-        style.window_padding = [4.0, 4.0];
-        style.frame_padding = [8.0, 4.0];
-        style.item_spacing = [4.0, 4.0];
-        style.item_inner_spacing = [4.0, 4.0];
-        style.indent_spacing = 16.0;
-        style.scrollbar_size = 12.0;
-        style.grab_min_size = 8.0;
-    }
+    // Apply complete AMOLED black theme
+    ui::PulsarTheme::apply_theme(&mut imgui);
 
     let mut platform = WinitPlatform::init(&mut imgui);
-    platform.attach_window(imgui.io_mut(), &window, imgui_winit_support::HiDpiMode::Default);
+    platform.attach_window(imgui.io_mut(), &window, imgui_winit_support::HiDpiMode::Rounded);
 
+    // High-quality font rendering with better scaling
     let hidpi_factor = window.scale_factor();
-    let font_size = (13.0 * hidpi_factor) as f32;
+    let base_font_size = 15.0; // Larger base font for better readability
+    let font_size = (base_font_size * hidpi_factor) as f32;
+
+    imgui.fonts().clear();
     imgui.fonts().add_font(&[
         FontSource::DefaultFontData {
             config: Some(imgui::FontConfig {
-                oversample_h: 1,
-                pixel_snap_h: true,
+                oversample_h: 3,
+                oversample_v: 1,
+                pixel_snap_h: false,
                 size_pixels: font_size,
+                rasterizer_multiply: 1.5,
                 ..Default::default()
             }),
         },

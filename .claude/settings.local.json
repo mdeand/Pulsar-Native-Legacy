@@ -5,7 +5,8 @@
       "Bash(cargo clean:*)",
       "Bash(cargo run:*)",
       "WebSearch",
-      "Read(//c/Users/redst/OneDrive/Documents/GitHub/Pulsar-Engine/**)"
+      "Read(//c/Users/redst/OneDrive/Documents/GitHub/Pulsar-Engine/**)",
+      "Bash(cargo:*)"
     ],
     "deny": [],
     "ask": []
